@@ -1,0 +1,66 @@
+# ── Nombres de archivos CSV por servicio ─────────────────────────────────────
+# Centralizar acá evita strings dispersos por todo el código.
+# Si renombrás un archivo, lo cambiás en un solo lugar.
+
+class InternetCSV:
+    TECNOLOGIAS         = "internet_accesos_tecnologias.csv"
+    VELOCIDAD_RANGOS    = "internet_accesos_velocidad_rangos.csv"
+    VELOCIDAD_MEDIA     = "internet_velocidad_media_descarga.csv"
+    BANDA_ANCHA_DIALUP  = "internet_banda_ancha_dialup.csv"
+    PENETRACION_HOGARES = "internet_accesos_penetracion.csv"
+    PENETRACION_POBLAC  = "internet_penetracion_poblacion.csv"
+    INGRESOS            = "internet_ingresos.csv"
+    ACCESOS_PROVINCIA   = "internet_accesos_provincia.csv"
+    ACCESOS_LOCALIDAD   = "internet_accesos_localidad.csv"
+    VELOCIDAD_PROVINCIA = "internet_velocidad_provincia.csv"
+
+
+class MovilCSV:
+    ACCESOS  = "comunicaciones_moviles_accesos.csv"
+    INGRESOS = "comunicaciones_moviles_ingresos.csv"
+    MINUTOS  = "comunicaciones_moviles_minutos.csv"
+    SMS      = "comunicaciones_moviles_sms.csv"
+
+
+class TVCSVs:
+    ACCESOS  = "tv_accesos.csv"
+    INGRESOS = "tv_ingresos.csv"
+
+
+class TelefoniaCSV:
+    FIJA_ACCESOS  = "telefonia_fija_accesos.csv"
+    FIJA_INGRESOS = "telefonia_fija_ingresos.csv"
+    FIJA_PENETRACION  = "telefonia_fija_penetracion.csv"
+    FIJA_PENETRACION_PROVINCIAS  = "telefonia_fija_penetracion_provincias.csv"
+
+
+class PostalCSV:
+    FACTURACION   = "mercado_postal_facturacion.csv"
+    PRODUCCION = "mercado_postal_produccion.csv"
+    PERSONAL_OCUPADO = "mercado_postal_personal_ocupado.csv"
+
+
+# ── Columnas estándar esperadas en todos los CSVs temporales ─────────────────
+COL_ANIO      = "anio"
+COL_TRIMESTRE = "trimestre"
+COL_PROVINCIA = "provincia"
+
+# ── Columnas de internet / tecnología ────────────────────────────────────────
+TECNOLOGIAS_COLS = ["adsl", "cablemodem", "fibra_optica", "wireless", "otros"]
+TECNOLOGIAS_LABELS = {
+    "adsl":        "ADSL",
+    "cablemodem":  "Cablemodem",
+    "fibra_optica":"Fibra óptica",
+    "wireless":    "Wireless",
+    "otros":       "Otros",
+    "total":       "Total",
+}
+
+# ── Provincias (para ordenar y filtrar consistentemente) ─────────────────────
+PROVINCIAS_ARG = [
+    "Buenos Aires", "CABA", "Catamarca", "Chaco", "Chubut", "Córdoba",
+    "Corrientes", "Entre Ríos", "Formosa", "Jujuy", "La Pampa", "La Rioja",
+    "Mendoza", "Misiones", "Neuquén", "Río Negro", "Salta", "San Juan",
+    "San Luis", "Santa Cruz", "Santa Fe", "Santiago del Estero",
+    "Tierra del Fuego", "Tucumán",
+]
