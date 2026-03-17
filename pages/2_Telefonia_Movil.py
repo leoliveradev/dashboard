@@ -29,11 +29,11 @@ setup_page()
 CATEGORIES = [
     "Resumen general",
     "Accesos",
-    "Ingresos",
     "Llamadas",
     "Minutos de voz",
     "SMS",
     "Penetración",
+    "Ingresos",
 ]
 
 categoria = render_sidebar(CATEGORIES, key="movil_categoria")
@@ -180,35 +180,6 @@ elif categoria == "Accesos":
 
     with st.expander("Ver datos"):
         st.dataframe(df_range, use_container_width=True)
-
-
-# ── Ingresos ──────────────────────────────────────────────────────────────────
-
-elif categoria == "Ingresos":
-    st.header("Ingresos del sector móvil")
-
-    df = load(MovilCSV.INGRESOS)
-    DataValidator.validate(df, ["anio", "trimestre"])
-    df = sort_by_periodo(add_periodo_col(df))
-
-    anio_desde, anio_hasta = render_range_filter(df, key_prefix="mov_ing")
-    df_range = df[(df["anio"] >= anio_desde) & (df["anio"] <= anio_hasta)].copy()
-
-    ing_col = next((c for c in df.columns if "ingreso" in c or "miles" in c), df.columns[-1])
-    val, delta = last_period_delta(df_range, ing_col)
-
-    show_kpis([{"label": "Ingresos (miles $)", "value": val,
-                "delta": delta, "format": "{:,.0f}"}])
-    st.divider()
-
-    tab1, tab2 = st.tabs(["Barras", "Línea"])
-    with tab1:
-        fig = bar_chart(df_range, "periodo", ing_col, title="Ingresos por trimestre")
-        st.plotly_chart(fig, use_container_width=True)
-    with tab2:
-        fig = line_chart(df_range, "periodo", ing_col,
-                         title="Ingresos — evolución", markers=False)
-        st.plotly_chart(fig, use_container_width=True)
 
 
 # ── Llamadas ──────────────────────────────────────────────────────────────────
@@ -455,3 +426,35 @@ elif categoria == "Penetración":
     with st.expander("Ver datos completos"):
         st.dataframe(df_range[["anio", "trimestre", "periodo", "accesos_100_hab"]],
                      use_container_width=True)
+        
+
+# ── Ingresos ──────────────────────────────────────────────────────────────────
+
+elif categoria == "Ingresos":
+    st.header("Ingresos del sector móvil")
+
+    df = load(MovilCSV.INGRESOS)
+    DataValidator.validate(df, ["anio", "trimestre"])
+    df = sort_by_periodo(add_periodo_col(df))
+
+    anio_desde, anio_hasta = render_range_filter(df, key_prefix="mov_ing")
+    df_range = df[(df["anio"] >= anio_desde) & (df["anio"] <= anio_hasta)].copy()
+
+    ing_col = next((c for c in df.columns if "ingreso" in c or "miles" in c), df.columns[-1])
+    val, delta = last_period_delta(df_range, ing_col)
+
+    show_kpis([{"label": "Ingresos (miles $)", "value": val,
+                "delta": delta, "format": "{:,.0f}"}])
+    st.divider()
+
+    tab1, tab2 = st.tabs(["Barras", "Línea"])
+    with tab1:
+        fig = bar_chart(df_range, "periodo", ing_col, title="Ingresos por trimestre")
+        st.plotly_chart(fig, use_container_width=True)
+    with tab2:
+        fig = line_chart(df_range, "periodo", ing_col,
+                         title="Ingresos — evolución", markers=False)
+        st.plotly_chart(fig, use_container_width=True)
+
+    with st.expander("Ver datos"):
+        st.dataframe(df_range, use_container_width=True)
