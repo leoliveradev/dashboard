@@ -5,8 +5,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 
 # ── Lectura de CSVs ────────────────────────────────────────────────────────
-CSV_ENCODING = "cp1252"
-CSV_SEPARATOR = ","
+CSV_ENCODING = "utf-8"
+CSV_SEPARATOR = ";"
 
 # ── App ────────────────────────────────────────────────────────────────────
 APP_TITLE = "Indicadores - ENACOM"
