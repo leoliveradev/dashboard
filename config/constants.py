@@ -20,10 +20,12 @@ class InternetCSV:
 
 
 class MovilCSV:
-    ACCESOS  = "comunicaciones_moviles_accesos.csv"
-    INGRESOS = "comunicaciones_moviles_ingresos.csv"
-    MINUTOS  = "comunicaciones_moviles_minutos.csv"
-    SMS      = "comunicaciones_moviles_sms.csv"
+    ACCESOS     = "comunicaciones_moviles_accesos.csv"
+    LLAMADAS    = "comunicaciones_moviles_llamadas.csv"
+    MINUTOS     = "comunicaciones_moviles_minutos.csv"
+    SMS         = "comunicaciones_moviles_sms.csv"
+    PENETRACION = "comunicaciones_moviles_penetracion.csv"
+    INGRESOS    = "comunicaciones_moviles_ingresos.csv"
 
 
 class TVCSVs:
