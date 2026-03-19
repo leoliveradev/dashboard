@@ -15,8 +15,13 @@ from config.theme import PLOTLY_BASE_LAYOUT, COLOR_SEQUENCE, COLORS
 
 
 def _apply_theme(fig: go.Figure) -> go.Figure:
-    """Aplica el layout base a cualquier figura Plotly."""
+    """Aplica el layout base y el formato numérico argentino a cualquier figura Plotly."""
     fig.update_layout(**PLOTLY_BASE_LAYOUT)
+    # Formato argentino: punto como separador de miles, coma para decimales
+    fig.update_layout(
+        separators=",.",   # separators="decimal_miles" → coma decimal, punto miles
+        yaxis={"tickformat": ",.0f", "separatethousands": True},
+    )
     return fig
 
 

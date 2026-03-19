@@ -2,21 +2,40 @@
 kpi_cards.py
 ────────────
 Componentes de KPI genéricos y reutilizables.
-
-La función principal `show_kpis` recibe una lista de dicts con
-la estructura de cada métrica, sin asumir nombres de columnas.
+Usa formato numérico argentino: punto como separador de miles, coma para decimales.
 """
 
 import streamlit as st
 
 
+def fmt_ar(format_str: str, value: float) -> str:
+    """
+    Formatea un número en formato argentino:
+      - Separador de miles: punto  (.)
+      - Separador decimal:  coma   (,)
+
+    Acepta los mismos format_str que se usan en toda la app:
+      "{:,.0f}"        → "1.234.567"
+      "{:.2f}"         → "12,34"
+      "{:.1f} Mbps"    → "85,3 Mbps"
+      "{:+.1f}%"       → "+3,2%"
+      "{:.1f}%"        → "42,5%"
+
+    El truco: Python formatea primero con coma/punto anglosajón,
+    luego hacemos el swap con un carácter temporal (#).
+    """
+    formatted = format_str.format(value)
+    # swap: , → # (temporal), . → , (decimales), # → . (miles)
+    return formatted.replace(",", "#").replace(".", ",").replace("#", ".")
+
+
 def show_kpis(metrics: list[dict]) -> None:
     """
-    Renderiza una fila de KPIs.
+    Renderiza una fila de KPIs con formato numérico argentino.
 
     Parameters
     ----------
-    metrics : lista de dicts con las siguientes claves:
+    metrics : lista de dicts:
         - label   (str)         : Etiqueta del KPI.
         - value   (int | float) : Valor principal.
         - delta   (float | None): Variación porcentual vs período anterior.
@@ -27,19 +46,18 @@ def show_kpis(metrics: list[dict]) -> None:
     -------
     show_kpis([
         {"label": "Accesos totales", "value": 12_345_678, "delta": 3.2,  "format": "{:,.0f}"},
-        {"label": "Fibra óptica",    "value":  4_200_000, "delta": 12.1, "format": "{:,.0f}"},
-        {"label": "Vel. media",      "value":        85.3, "delta": 5.0,  "format": "{:.1f} Mbps"},
+        {"label": "Vel. media",      "value": 85.3,       "delta": 5.0,  "format": "{:.1f} Mbps"},
     ])
     """
     cols = st.columns(len(metrics))
 
     for col, m in zip(cols, metrics):
-        value_str = m.get("format", "{:,.0f}").format(m["value"])
+        value_str = fmt_ar(m.get("format", "{:,.0f}"), m["value"])
         delta     = m.get("delta")
         help_text = m.get("help")
 
         if delta is not None:
-            delta_str = f"{delta:+.1f}% vs trimestre anterior"
+            delta_str = fmt_ar("{:+.1f}%", delta) + " vs trim. anterior"
         else:
             delta_str = None
 
@@ -52,20 +70,15 @@ def show_kpis(metrics: list[dict]) -> None:
 
 
 def show_kpi_row_with_icon(metrics: list[dict]) -> None:
-    """
-    Variante con ícono y tarjeta personalizada usando st.container.
-
-    Mismo formato que show_kpis pero con un campo extra:
-        - icon (str): emoji para mostrar junto al label.
-    """
+    """Variante con ícono y tarjeta personalizada."""
     cols = st.columns(len(metrics))
     for col, m in zip(cols, metrics):
         with col:
             icon      = m.get("icon", "")
-            value_str = m.get("format", "{:,.0f}").format(m["value"])
+            value_str = fmt_ar(m.get("format", "{:,.0f}"), m["value"])
             delta     = m.get("delta")
 
-            delta_str = f"{delta:+.1f}%" if delta is not None else ""
+            delta_str   = fmt_ar("{:+.1f}%", delta) if delta is not None else ""
             delta_color = "green" if (delta or 0) >= 0 else "red"
 
             st.markdown(
