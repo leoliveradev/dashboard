@@ -173,7 +173,7 @@ elif categoria == "Velocidad media":
     vel_actual, delta_vel = last_period_delta(df_range, "mbps")
     show_kpis([
         {"label": "Vel. media actual", "value": vel_actual,
-         "delta": delta_vel, "format": "{:.1f} Mbps"},
+         "delta": delta_vel, "format": "{:.2f} Mbps"},
     ])
 
     st.divider()
@@ -288,7 +288,7 @@ elif categoria == "Rangos de velocidad":
     show_kpis([
         {"label": "Total accesos",    "value": total_acc, "format": "{:,.0f}"},
         {"label": "+30 Mbps",         "value": alta_vel,  "format": "{:,.0f}"},
-        {"label": "% sobre +30 Mbps", "value": pct_alta,  "format": "{:.1f}%",
+        {"label": "% sobre +30 Mbps", "value": pct_alta,  "format": "{:.2f}%",
          "help": "Proporción de accesos con velocidad mayor a 30 Mbps"},
         {"label": "Hasta 1 Mbps",     "value": baja_vel,  "format": "{:,.0f}"},
     ])
@@ -643,9 +643,9 @@ elif categoria == "Velocidad media - provincia":
 
     show_kpis([
         {"label": f"Mayor velocidad ({top['provincia']})",
-         "value": top["mbps"], "format": "{:.1f} Mbps"},
+         "value": top["mbps"], "format": "{:.2f} Mbps"},
         {"label": f"Menor velocidad ({low['provincia']})",
-         "value": low["mbps"], "format": "{:.1f} Mbps"},
+         "value": low["mbps"], "format": "{:.2f} Mbps"},
         {"label": "Promedio nacional",
          "value": df_periodo["mbps"].mean(), "format": "{:.1f} Mbps"},
         {"label": "Diferencia máx–mín",
