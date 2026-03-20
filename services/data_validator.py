@@ -39,7 +39,7 @@ class DataValidator:
         if missing_cols:
             label = f" en `{context}`" if context else ""
             msg = (
-                f"Columnas faltantes: `{missing}`\n\n "
+                f"Columnas faltantes: `{missing_cols}`\n\n "
                 f"Columnas disponibles: `{list(df.columns)}`"
             )
             st.error(msg, icon="❌")

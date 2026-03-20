@@ -112,16 +112,8 @@ def last_period_delta(
     """
     df = sort_by_periodo(df.copy())
 
-    # Forzar conversión numérica — la columna puede llegar como string
-    # si la normalización del DataManager no la detectó (ej. puntos de miles mezclados)
-    col = pd.to_numeric(
-        df[value_col]
-          .astype(str)
-          .str.replace(".", "", regex=False)
-          .str.replace(",", ".", regex=False),
-        errors="coerce",
-    )
-    df[value_col] = col
+    # Forzar conversión numérica por si la columna llegó como object
+    df[value_col] = pd.to_numeric(df[value_col], errors="coerce")
 
     df = df.dropna(subset=[value_col])
 

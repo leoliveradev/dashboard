@@ -53,10 +53,23 @@ class DataManager:
             )
 
         try:
+            # Auto-detecta encoding (utf-8-sig elimina BOM) y separador (, o ;)
+            encoding_ok = CSV_ENCODING
+            for enc in ("utf-8-sig", CSV_ENCODING):
+                try:
+                    with open(filepath, encoding=enc, errors="strict") as f:
+                        first_line = f.readline()
+                    encoding_ok = enc
+                    break
+                except UnicodeDecodeError:
+                    continue
+
+            sep = ";" if first_line.count(";") > first_line.count(",") else CSV_SEPARATOR
+
             df = pd.read_csv(
                 filepath,
-                sep=CSV_SEPARATOR,
-                encoding=CSV_ENCODING,
+                sep=sep,
+                encoding=encoding_ok,
             )
         except Exception as exc:
             raise DataLoadError(
@@ -81,18 +94,20 @@ class DataManager:
             .str.lower()
             .str.replace(" ", "_")
             .str.replace(r"[^\w]", "_", regex=True)
+            .str.strip("_")   # elimina BOM residual (ï__, etc.)
         )
 
         # Strip de strings en columnas object
         str_cols = df.select_dtypes(include="object").columns
         df[str_cols] = df[str_cols].apply(lambda c: c.str.strip())
 
-        # Columnas numéricas que vienen con puntos de miles (ej. "1.234.567")
+        # Columnas numéricas que vienen como string (ej. pandas lee números con sep=;
+        # como object en algunos casos). Intenta convertir directamente — los CSVs
+        # usan punto como decimal, que es lo que Python/pandas espera.
         for col in df.columns:
             if df[col].dtype == object:
-                cleaned = df[col].str.replace(".", "", regex=False).str.replace(",", ".", regex=False)
                 try:
-                    df[col] = pd.to_numeric(cleaned)
+                    df[col] = pd.to_numeric(df[col])
                 except (ValueError, AttributeError):
                     pass  # No era numérica, se deja como está
 
