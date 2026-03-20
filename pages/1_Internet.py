@@ -65,46 +65,236 @@ def load(filename: str):
 
 # ── Resumen general ───────────────────────────────────────────────────────────
 
+
 if categoria == "Resumen general":
     st.header("Resumen general")
-
-    df = load(InternetCSV.TECNOLOGIAS)
-    DataValidator.validate(df, ["anio", "trimestre", "total", "fibra_optica", "adsl"])
-
-    df = sort_by_periodo(add_periodo_col(df))
-    df_nat = aggregate_by_periodo(df, TECNOLOGIAS_COLS + ["total"])
-
-    total, delta_total = last_period_delta(df_nat, "total")
-    fibra, delta_fibra = last_period_delta(df_nat, "fibra_optica")
-    adsl,  delta_adsl  = last_period_delta(df_nat, "adsl")
-    cable, delta_cable = last_period_delta(df_nat, "cablemodem")
-
-    show_kpis([
-        {"label": "Accesos totales", "value": total, "delta": delta_total, "format": "{:,.0f}"},
-        {"label": "Fibra óptica",    "value": fibra, "delta": delta_fibra, "format": "{:,.0f}"},
-        {"label": "Cablemodem",      "value": cable, "delta": delta_cable, "format": "{:,.0f}"},
-        {"label": "ADSL",            "value": adsl,  "delta": delta_adsl,  "format": "{:,.0f}"},
-    ])
-
+ 
+    df_tec  = load(InternetCSV.TECNOLOGIAS)
+    df_pen  = load(InternetCSV.PENETRACION)
+    df_ing  = load(InternetCSV.INGRESOS)
+    df_rang = load(InternetCSV.VELOCIDAD_RANGOS)
+ 
+    for df, cols in [
+        (df_tec,  ["anio", "trimestre", "total", "fibra_optica", "cablemodem", "adsl"]),
+        (df_pen,  ["anio", "trimestre", "accesos_cada_100_hogares", "accesos_cada_100_habitantes"]),
+        (df_ing,  ["anio", "trimestre"]),
+        (df_rang, ["anio", "trimestre"] + VELOCIDAD_RANGOS_COLS),
+    ]:
+        DataValidator.validate(df, cols)
+ 
+    df_tec  = sort_by_periodo(add_periodo_col(df_tec))
+    df_pen  = sort_by_periodo(add_periodo_col(df_pen))
+    df_ing  = sort_by_periodo(add_periodo_col(df_ing))
+    df_rang = sort_by_periodo(add_periodo_col(df_rang))
+ 
+    # Detectar columna de ingresos
+    ing_col = next((c for c in df_ing.columns if "ingreso" in c), None)
+ 
+    # Período de cada dataset
+    periodo_tec  = df_tec["periodo"].iloc[-1]
+    periodo_pen  = df_pen["periodo"].iloc[-1]
+    periodo_ing  = df_ing["periodo"].iloc[-1] if ing_col else "—"
+ 
+    # KPIs
+    total,  delta_total = last_period_delta(df_tec, "total")
+    fibra,  delta_fibra = last_period_delta(df_tec, "fibra_optica")
+    hog,    delta_hog   = last_period_delta(df_pen, "accesos_cada_100_hogares")
+    hab,    delta_hab   = last_period_delta(df_pen, "accesos_cada_100_habitantes")
+ 
+    kpis_row1 = [
+        {"label": f"Accesos totales ({periodo_tec})",
+         "value": total, "delta": delta_total, "format": "{:,.0f}"},
+        {"label": f"Fibra óptica ({periodo_tec})",
+         "value": fibra, "delta": delta_fibra, "format": "{:,.0f}"},
+        {"label": f"Penetración c/100 hogares ({periodo_pen})",
+         "value": hog,   "delta": delta_hog,   "format": "{:.2f}"},
+        {"label": f"Penetración c/100 habitantes ({periodo_pen})",
+         "value": hab,   "delta": delta_hab,   "format": "{:.2f}"},
+    ]
+    if ing_col:
+        ing, delta_ing = last_period_delta(df_ing, ing_col)
+        kpis_row1.append({
+            "label": f"Ingresos miles $ ({periodo_ing})",
+            "value": ing, "delta": delta_ing, "format": "{:,.0f}",
+        })
+ 
+    # Fila 1 — primeros 3 KPIs
+    # % fibra sobre total
+    ultimo_tec     = df_tec.iloc[-1]
+    prev_tec       = df_tec.iloc[-2]
+    pct_fibra      = ultimo_tec["fibra_optica"] / ultimo_tec["total"] * 100
+    pct_fibra_prev = prev_tec["fibra_optica"]   / prev_tec["total"]   * 100
+    delta_pct_fibra = pct_fibra - pct_fibra_prev
+ 
+    # Armar las 6 KPIs y mostrar en 2 filas de 3
+    kpi_pct_fibra = {
+        "label": f"% Fibra sobre total ({periodo_tec})",
+        "value": pct_fibra,
+        "delta": delta_pct_fibra,
+        "format": "{:.1f}%",
+        "help": "Participación de fibra óptica sobre el total de accesos",
+    }
+ 
+    # Fila 1: Accesos totales · Fibra óptica · % Fibra
+    # Fila 2: Penetración hogares · Penetración hab. · Ingresos
+    kpis_fila1 = [kpis_row1[0], kpis_row1[1], kpi_pct_fibra]
+    kpis_fila2 = kpis_row1[2:]
+ 
+    show_kpis(kpis_fila1)
+    show_kpis(kpis_fila2)
+ 
     st.divider()
-
-    df_long = melt_tecnologias(df_nat, value_cols=TECNOLOGIAS_COLS,
-                               var_name="Tecnología", value_name="Accesos")
-    df_long["Tecnología"] = df_long["Tecnología"].map(TECNOLOGIAS_LABELS)
-
-    col1, col2 = st.columns([2, 1])
+ 
+    # ── Fila 1: Anillo tecnología + Gauge velocidad media ───────────────────
+    col1, col2 = st.columns([1, 1])
+ 
     with col1:
-        fig = line_chart(df_long, x="periodo", y="Accesos", color="Tecnología",
-                         title="Accesos por tecnología — evolución")
-        st.plotly_chart(fig, use_container_width=True)
-    with col2:
-        df_pie = df_nat[TECNOLOGIAS_COLS].iloc[-1].rename(TECNOLOGIAS_LABELS).reset_index()
+        df_pie = (
+            df_tec[TECNOLOGIAS_COLS].iloc[-1]
+            .rename(TECNOLOGIAS_LABELS)
+            .reset_index()
+        )
         df_pie.columns = ["Tecnología", "Accesos"]
-        fig2 = px.pie(df_pie, names="Tecnología", values="Accesos",
-                      title=f"Composición — {df_nat['periodo'].iloc[-1]}", hole=0.45)
-        fig2.update_layout(margin={"t": 50, "b": 0, "l": 0, "r": 0})
-        st.plotly_chart(fig2, use_container_width=True)
-
+        fig_pie = px.pie(
+            df_pie, names="Tecnología", values="Accesos",
+            title=f"Composición por tecnología — {periodo_tec}",
+            hole=0.45,
+            color="Tecnología",
+            color_discrete_map={
+                "Fibra óptica": "#00B5E5",
+                "Cablemodem":   "#EEAE42",
+                "Wireless":     "#ACAE22",
+                "ADSL":         "#C6C6C6",
+                "Otros":        "#003667",
+            },
+        )
+        fig_pie.update_layout(
+            margin={"t": 50, "b": 20, "l": 0, "r": 0},
+            separators=",.",
+            legend={"orientation": "h", "y": -0.1},
+        )
+        st.plotly_chart(fig_pie, use_container_width=True)
+ 
+    with col2:
+        # Velocidad media nacional y máx. provincial
+        df_vel  = load(InternetCSV.VELOCIDAD_MEDIA)
+        df_velp = load(InternetCSV.VELOCIDAD_MEDIA_PROVINCIA)
+ 
+        df_vel  = sort_by_periodo(add_periodo_col(df_vel))
+        df_velp = sort_by_periodo(add_periodo_col(df_velp))
+ 
+        vel_nac, _  = last_period_delta(df_vel, "mbps")
+        periodo_vel = df_vel["periodo"].iloc[-1]
+ 
+        # Provincia más rápida en su último período disponible
+        ultimo_prov = filter_by_period(
+            df_velp,
+            int(df_velp["anio"].iloc[-1]),
+            int(df_velp["trimestre"].iloc[-1]),
+        )
+        top_prov     = ultimo_prov.nlargest(1, "mbps").iloc[0]
+        vel_top      = float(top_prov["mbps"])
+        nombre_top   = top_prov["provincia"]
+        periodo_velp = df_velp["periodo"].iloc[-1]
+ 
+        # Escala del gauge: techo en el máx. provincial redondeado hacia arriba
+        gauge_max = round(vel_top * 1.15 / 50) * 50  # siguiente múltiplo de 50
+ 
+        fig_gauge = go.Figure(go.Indicator(
+            mode="gauge+number+delta",
+            value=vel_nac,
+            number={"suffix": " Mbps", "font": {"size": 28, "color": "#0B1742"},
+                    "valueformat": ".1f"},
+            delta={
+                "reference": vel_top,
+                "position":  "bottom",
+                "valueformat": ".1f",
+                "suffix": f" Mbps vs {nombre_top}",
+                "font": {"size": 11},
+                "decreasing": {"color": "#005297"},
+                "increasing": {"color": "#ACAE22"},
+            },
+            title={
+                "text": (
+                    f"Velocidad media nacional ({periodo_vel})<br>"
+                    f"<span style='font-size:11px;color:#64748b'>"
+                    f"Mayor provincia: {nombre_top} — {vel_top:.1f} Mbps ({periodo_velp})"
+                    f"</span>"
+                ),
+                "font": {"size": 13, "color": "#0B1742"},
+            },
+            gauge={
+                "axis": {
+                    "range": [0, gauge_max],
+                    "tickwidth": 1,
+                    "tickcolor": "#C6C6C6",
+                    "tickformat": ".0f",
+                    "nticks": 6,
+                },
+                "bar":       {"color": "#00B5E5", "thickness": 0.25},
+                "bgcolor":   "rgba(0,0,0,0)",
+                "borderwidth": 0,
+                "steps": [
+                    {"range": [0,           gauge_max * 0.33], "color": "#E8F8FD"},
+                    {"range": [gauge_max * 0.33, gauge_max * 0.66], "color": "#BCE4F4"},
+                    {"range": [gauge_max * 0.66, gauge_max],         "color": "#78CBE9"},
+                ],
+                "threshold": {
+                    "line":  {"color": "#EEAE42", "width": 3},
+                    "thickness": 0.75,
+                    "value": vel_top,
+                },
+            },
+        ))
+        fig_gauge.update_layout(
+            height=300,
+            margin={"t": 80, "b": 10, "l": 20, "r": 20},
+            paper_bgcolor="rgba(0,0,0,0)",
+            font={"family": "Inter, Arial, sans-serif"},
+            separators=",.",
+        )
+        st.plotly_chart(fig_gauge, use_container_width=True)
+ 
+    # ── Fila 2: Fibra vs ADSL vs Cablemodem + Anillo rangos de velocidad ─────
+    col3, col4 = st.columns([2, 1])
+ 
+    with col3:
+        df_nat2 = aggregate_by_periodo(df_tec, ["fibra_optica", "adsl", "cablemodem"])
+        df_comp = melt_tecnologias(
+            df_nat2, ["fibra_optica", "adsl", "cablemodem"],
+            var_name="Tecnología", value_name="Accesos",
+        )
+        df_comp["Tecnología"] = df_comp["Tecnología"].map(TECNOLOGIAS_LABELS)
+        fig = line_chart(
+            df_comp, "periodo", "Accesos", "Tecnología",
+            title="Fibra vs ADSL vs Cablemodem — convergencia tecnológica",
+            markers=False,
+            color_map={
+                "Fibra óptica": "#00B5E5",
+                "ADSL":         "#C6C6C6",
+                "Cablemodem":   "#EEAE42",
+            },
+        )
+        st.plotly_chart(fig, use_container_width=True)
+ 
+    with col4:
+        periodo_rang = df_rang["periodo"].iloc[-1]
+        ultimo_rang  = df_rang[VELOCIDAD_RANGOS_COLS].iloc[-1].rename(VELOCIDAD_RANGOS_LABELS)
+        df_rang_pie  = ultimo_rang.reset_index()
+        df_rang_pie.columns = ["Rango", "Accesos"]
+        df_rang_pie = df_rang_pie[df_rang_pie["Accesos"] > 0]
+        fig_rang = px.pie(
+            df_rang_pie, names="Rango", values="Accesos",
+            title=f"Rangos de velocidad — {periodo_rang}",
+            hole=0.45,
+        )
+        fig_rang.update_layout(
+            margin={"t": 50, "b": 0, "l": 0, "r": 0},
+            separators=",.",
+            legend={"orientation": "h", "y": -0.15},
+        )
+        st.plotly_chart(fig_rang, use_container_width=True)
+ 
 
 # ── Tecnología ────────────────────────────────────────────────────────────────
 
@@ -181,7 +371,9 @@ elif categoria == "Velocidad media":
     st.plotly_chart(
         line_chart(df_range, x="periodo", y="mbps",
                    title="Velocidad media de descarga (Mbps)",
-                   labels={"mbps": "Mbps", "periodo": "Período"}, markers=True),
+                   labels={"mbps": "Mbps", "periodo": "Período"}, 
+                   markers=True,
+                   y_tickformat=",.2f"),
         use_container_width=True,
     )
 
