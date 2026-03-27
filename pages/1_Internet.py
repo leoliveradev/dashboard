@@ -837,38 +837,43 @@ elif categoria == "Tecnología - provincia":
 
 # ── Velocidad media - provincia ───────────────────────────────────────────────────
 
-elif categoria == "Velocidad media - provincia":
-    # st.header("Velocidad media de descarga — por provincia")
 
+elif categoria == "Velocidad media - provincia":
+ 
     df = load(InternetCSV.VELOCIDAD_MEDIA_PROVINCIA)
     DataValidator.validate(df, ["anio", "trimestre", "provincia", "mbps"])
-
-    # anio, trimestre = render_period_filters(df, key_prefix="prov_vel")
+ 
     anio, trimestre = render_header_with_filters("Velocidad media de descarga — por provincia", df, key_prefix="prov_vel")
-
-    st.divider()
-
+ 
     if not DataValidator.has_data(df, {"anio": anio, "trimestre": trimestre}):
         st.stop()
-
+ 
     df_periodo = filter_by_period(df, anio, trimestre).copy()
-
-    top = df_periodo.nlargest(1, "mbps").iloc[0]
-    low = df_periodo.nsmallest(1, "mbps").iloc[0]
-
-    show_kpis([
-        {"label": f"Mayor velocidad ({top['provincia']})",
-         "value": top["mbps"], "format": "{:.2f} Mbps"},
-        {"label": f"Menor velocidad ({low['provincia']})",
-         "value": low["mbps"], "format": "{:.2f} Mbps"},
-        {"label": "Promedio nacional",
-         "value": df_periodo["mbps"].mean(), "format": "{:.1f} Mbps"},
-        {"label": "Diferencia máx–mín",
-         "value": top["mbps"] - low["mbps"], "format": "{:.1f} Mbps"},
-    ])
-
+ 
+    # Top 3 provincias
+    top3 = df_periodo.nlargest(3, "mbps")[["provincia", "mbps"]].values
+    low  = df_periodo.nsmallest(1, "mbps").iloc[0]
+ 
+    # Velocidad media nacional del mismo período
+    df_vel_nac = load(InternetCSV.VELOCIDAD_MEDIA)
+    df_vel_nac = sort_by_periodo(add_periodo_col(df_vel_nac))
+    df_nac_periodo = filter_by_period(df_vel_nac, anio, trimestre)
+    vel_nac = float(df_nac_periodo["mbps"].iloc[0]) if len(df_nac_periodo) > 0 else None
+ 
+    kpis = [
+        {"label": f"1° {top3[0][0]}", "value": top3[0][1], "format": "{:.1f} Mbps"},
+        {"label": f"2° {top3[1][0]}", "value": top3[1][1], "format": "{:.1f} Mbps"},
+        {"label": f"3° {top3[2][0]}", "value": top3[2][1], "format": "{:.1f} Mbps"},
+        {"label": f"Menor ({low['provincia']})", "value": low["mbps"], "format": "{:.1f} Mbps"},
+    ]
+    if vel_nac is not None:
+        kpis.append({"label": "VMD nacional", "value": vel_nac, "format": "{:.1f} Mbps",
+                     "help": "Velocidad media de descarga nacional del mismo período"})
+ 
+    show_kpis(kpis)
+ 
     st.divider()
-
+ 
     st.subheader("Ranking por velocidad media")
     df_rank = df_periodo[["provincia","mbps"]].sort_values("mbps", ascending=True)
     fig = bar_chart(df_rank, x="mbps", y="provincia",
@@ -880,12 +885,12 @@ elif categoria == "Velocidad media - provincia":
     )
     fig.update_traces(marker_color="#00B5E5", orientation="h")
     st.plotly_chart(fig, use_container_width=True)
-
+ 
     st.divider()
-
+ 
     # ── Evolución multi-provincia ─────────────────────────────────────────────
     st.subheader("Comparar evolución entre provincias")
-
+ 
     provincias = sorted(df["provincia"].unique())
     prov_multi = st.multiselect(
         "Seleccionar provincias",
@@ -893,7 +898,7 @@ elif categoria == "Velocidad media - provincia":
         default=["Buenos Aires", "CABA", "Córdoba", "Santa Fe"],
         key="prov_vel_multi",
     )
-
+ 
     if prov_multi:
         df_multi = df[df["provincia"].isin(prov_multi)].copy()
         df_multi = sort_by_periodo(add_periodo_col(df_multi))
@@ -903,7 +908,7 @@ elif categoria == "Velocidad media - provincia":
             labels={"mbps": "Mbps"},
         )
         st.plotly_chart(fig, use_container_width=True)
-
+ 
 
 # ── Banda ancha - provincia ───────────────────────────────────────────────────────
 
