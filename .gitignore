@@ -36,9 +36,9 @@ venv.bak/
 
 # --- Datos y Notebooks ---
 # Ignora archivos de datos pesados o temporales
-# data/*.csv
-# data/*.xlsx
-# data/*.json
+data/*.csv
+data/*.xlsx
+data/*.json
 # Si quieres subir un archivo de ejemplo, puedes usar: !data/ejemplo.csv
 
 .ipynb_checkpoints
