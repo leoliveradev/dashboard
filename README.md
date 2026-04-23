@@ -91,9 +91,15 @@ df = DataManager.load(InternetEndpoints.NUEVO_RECURSO)
 ```
 
 ### Agregar un nuevo gráfico reutilizable
+Añadir una función en `components/charts.py` siguiendo el patrón establecido:
+-  Recibe un `DataFrame` y parámetros de configuración.
+-  Aplica internamente `_apply_theme()` para mantener la coherencia visual.
+-  Devuelve un objeto `figure` de Plotly listo para mostrar.
 
-Agregar una función en `components/charts.py` siguiendo el patrón existente:
-recibe un DataFrame y parámetros, aplica `_apply_theme()`, devuelve una figura Plotly.
+## 🔓 Fuente de Datos y Licencia
 
-## 📄 Licencia
-Este proyecto es de código abierto y utiliza datos públicos. Consulta los términos de uso en ENACOM Datos Abiertos.
+Los datos utilizados en esta API provienen del **[Portal de Datos Abiertos de ENACOM](https://datosabiertos.enacom.gob.ar/)** (Ente Nacional de Comunicaciones).
+
+*   **Atribución:** Fuente: ENACOM.
+*   **Licencia de los datos:** El contenido se distribuye bajo la licencia [Creative Commons Atribución 4.0 Internacional (CC BY 4.0)](https://creativecommons.org).
+*   **Términos de uso:** El uso de esta información se rige por los [términos y condiciones generales](https://enacom.gob.ar) de ENACOM.
